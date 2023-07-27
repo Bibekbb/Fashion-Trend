@@ -1,91 +1,46 @@
-# from .models import Category, Product, Brand, UserInteraction
-# from datetime import datetime
-# from collections import Counter
+import logging
+from .models import Category, Product, Brand, UserInteraction
+from datetime import datetime
+from collections import Counter
 
 
+def get_item_recommendations(cart, num_recommendations=5):
+    product_ids = list(cart.keys())
+    product_ids = list(map(int, product_ids))
 
-# def get_item_recommendations(cart, num_recommendations=5):
-#     product_ids = list(cart.keys())
+    logging.debug("Product IDs in cart: %s", product_ids)
 
-#     # Convert the product IDs to integers
-#     product_ids = [int(product_id) for product_id in product_ids]
+    products = Product.objects.filter(id__in=product_ids)
+    sub_categories = products.values_list('subcategory', flat=True)
+    recommended_products = Product.objects.filter(subcategory__in=sub_categories).exclude(
+        id__in=products
+    )[:5]
 
-#     print("Product IDs in cart:", product_ids)
+    user_interactions = UserInteraction.objects.filter(product__id__in=product_ids).values_list('user_id', 'product_id')
 
-#     products = Product.objects.filter(id__in=product_ids)
-#     sub_categories = products.values_list('subcategory', flat=True)
-#     recommended_products = Product.objects.filter(subcategory__in=sub_categories).exclude(
-#         id__in=products
-#     )[:5]
-#     return recommended_products
+    user_similarity = {}
+    for user_id, product_id in user_interactions:
+        if user_id not in user_similarity:
+            user_similarity[user_id] = Counter()
+        user_similarity[user_id][product_id] += 1
 
-#     # Get interactions of all users with the given product IDs
-#     user_interactions = UserInteraction.objects.filter(product__id__in=product_ids)
+    most_similar_users = Counter()
+    for user_id, items in user_similarity.items():
+        most_similar_users.update(items)
 
-#     print("User Interactions:", user_interactions)
+    for product_id in product_ids:
+        most_similar_users[product_id] = 0
 
-#     # Calculate similarity between users based on their interactions
-#     user_similarity = {}
-#     for interaction in user_interactions:
-#         user_id = interaction.user.id
-#         product_id = interaction.product.id
+    recommended_product_ids = [product_id for product_id, _ in most_similar_users.most_common(num_recommendations)]
+    logging.debug("Recommended Product IDs: %s", recommended_product_ids)
 
-#         if user_id not in user_similarity:
-#             user_similarity[user_id] = Counter()
+    cart_subcategories = set(products.values_list('subcategory', flat=True))
+    recommended_products = Product.objects.filter(
+        subcategory__in=cart_subcategories
+    ).exclude(
+        id__in=products
+    )[:num_recommendations]
 
-#         user_similarity[user_id][product_id] += 1
+    logging.debug("Recommended Products: %s", recommended_products)
 
-#     # Find users most similar to the current user based on their interactions
-#     most_similar_users = Counter()
-#     for user_id, items in user_similarity.items():
-#         most_similar_users.update(items)
-
-#    # Product already in cart in to recommend
-#     for product_id in product_ids:
-#         most_similar_users[product_id] = 0
-
-#     # Get the recommended product IDs
-#     recommended_product_ids = [product_id for product_id, _ in most_similar_users.most_common(num_recommendations)]
-
-#     print("Recommended Product IDs:", recommended_product_ids)
-
-   
-#     recommended_products = Product.objects.filter(id__in=recommended_product_ids)
-
-    
-#     cart_products = Product.objects.filter(id__in=product_ids)
-#     cart_brands = set(cart_products.values_list('brand__name', flat=True))
-#     cart_categories = set(cart_products.values_list('category__name', flat=True))
-#     cart_subcategories = set(cart_products.values_list('subcategory__name', flat=True))
-
-#     recommended_products = recommended_products.filter(
-#         brand__name__in=cart_brands,
-#         category__name__in=cart_categories,
-#         subcategory__name__in=cart_subcategories,
-#     )
-
-#     print("Recommended Products:", recommended_products)
-
-#     return recommended_products
-
-
-
-# from .models import Product
-
-# def get_item_recommendations(cart, num_recommendations=5):
-#     product_ids = list(cart.keys())
-#     # Convert the product IDs to integers
-#     product_ids = [int(product_id) for product_id in product_ids]
-
-#     # Get the subcategories of products in the cart
-#     cart_subcategories = set(Product.objects.filter(id__in=product_ids).values_list('subcategory__name', flat=True))
-
-#     # Find other products in the same subcategories as those in the cart
-#     recommended_products = Product.objects.filter(subcategory__name__in=cart_subcategories).exclude(
-#         id__in=product_ids
-#     ).distinct()
-
-#     # Rank the recommendations (you can customize this based on popularity, ratings, etc.)
-#     recommended_products = recommended_products.order_by('-popularity')[:num_recommendations]
-
-#     return recommended_products
+    return recommended_products

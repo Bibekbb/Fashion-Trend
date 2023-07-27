@@ -10,8 +10,8 @@ from datetime import datetime
 # from app.utils import get_item_recommendations
 from django.contrib.sessions.backends.db import SessionStore
 # from app.product_recommended import get_item_recommendations
-from app.recommed import get_item_recommendations
-# from app.prod_recomm import get_item_recommendations
+# from app.recommed import get_item_recommendations
+from app.prod_recomm import get_item_recommendations
 
 
 def base(request):
@@ -214,18 +214,3 @@ def Search(request):
         'product': product,
     }
     return render(request, 'search.html', context)
-
-
-def add_to_cart(request, product_id):
-    if 'cart' not in request.session:
-        request.session['cart'] = []
-
-    cart = request.session['cart']
-    cart.append(product_id)
-    request.session['cart'] = cart
-
-    # Add other logic for handling cart interactions
-    # ...
-
-    # Redirect the user to the cart page or any other relevant page
-    return redirect('cart')

@@ -1,13 +1,13 @@
-from .models import Product
-from collections import Counter
-from sklearn.neighbors import NearestNeighbors
+# from .models import Product
+# from collections import Counter
+# from sklearn.neighbors import NearestNeighbors
 
-import numpy as np
+# import numpy as np
 
-def get_item_recommendations(cart, num_recommendations=5):
+# def get_item_recommendations(cart, num_recommendations=5):
     
 
-    return []
+#     return []
 
     # # Extract the product IDs from the cart dictionary
     # product_ids = list(cart.keys())
@@ -82,3 +82,25 @@ def get_item_recommendations(cart, num_recommendations=5):
     # print("Recommended Products (after filtering by subcategory):", recommended_products)
 
     # return recommended_products
+
+
+
+# from .models import Product
+
+# def get_item_recommendations(cart, num_recommendations=5):
+#     product_ids = list(cart.keys())
+#     # Convert the product IDs to integers
+#     product_ids = [int(product_id) for product_id in product_ids]
+
+#     # Get the subcategories of products in the cart
+#     cart_subcategories = set(Product.objects.filter(id__in=product_ids).values_list('subcategory__name', flat=True))
+
+#     # Find other products in the same subcategories as those in the cart
+#     recommended_products = Product.objects.filter(subcategory__name__in=cart_subcategories).exclude(
+#         id__in=product_ids
+#     ).distinct()
+
+#     # Rank the recommendations (you can customize this based on popularity, ratings, etc.)
+#     recommended_products = recommended_products.order_by('-popularity')[:num_recommendations]
+
+#     return recommended_products
